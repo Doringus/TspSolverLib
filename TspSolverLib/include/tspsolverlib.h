@@ -15,22 +15,32 @@
 #endif
 
 
+#include <vector>
+#include <concepts>
+
+#include "matrix.h"
 
 namespace tspsolver {
 
-    class TSPSOLVERLIB_EXPORT TspSolver {
-
+    struct optimalTour_t {
+        double weight;
+        std::vector<int> path;
     };
 
+    struct TSPSOLVERLIB_EXPORT TspSolver {
+        virtual optimalTour_t solve() = 0;
+    };
+
+/*
+
+    template <typename Type> requires Number<Type>
+    class TSPSOLVERLIB_EXPORT BBSolver : public TspSolver {
+    public:
+        BBSolver(<Type> graphMatrix);
+
+        optimalTour_t solve() override;
+    private:
+        Matrix<Type> m_GraphMatrix;
+    };
+ */
 }
-
-#include <string>
-
-class TSPSOLVERLIB_EXPORT TspSolverLib
-{
-public:
-    TspSolverLib();
-    std::string print() {
-        return "Hello fron dll\n";
-    }
-};

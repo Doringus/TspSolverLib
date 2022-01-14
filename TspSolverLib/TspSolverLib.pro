@@ -15,6 +15,7 @@ SOURCES += \
     tspsolverlib.cpp
 
 HEADERS += \
+    include/matrix.h \
     include/tspsolverlib.h \
 
 # Default rules for deployment.

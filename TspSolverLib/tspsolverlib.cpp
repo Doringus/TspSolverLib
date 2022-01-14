@@ -1,5 +1,2 @@
-#include "headers/tspsolverlib.h"
+#include "include/tspsolverlib.h"
 
-TspSolverLib::TspSolverLib()
-{
-}
