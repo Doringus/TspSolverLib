@@ -16,7 +16,9 @@ namespace tspsolver {
     class SquareMatrix {
     public:
         using RowIterator = typename std::vector<Type>::iterator;
+        using RowCIterator = typename std::vector<Type>::const_iterator;
         using ColumnIterator = typename std::vector<std::reference_wrapper<Type>>::iterator;
+        using ColumnCIterator = typename std::vector<std::reference_wrapper<Type>>::const_iterator;
 
         explicit SquareMatrix(std::size_t size) {
             m_Data.resize(size);
@@ -40,9 +42,13 @@ namespace tspsolver {
             }
         }
 
-        SquareMatrix(SquareMatrix&& matrix) : m_Data(std::exchange(matrix.m_Data, {})),
+        SquareMatrix(SquareMatrix&& matrix) noexcept: m_Data(std::exchange(matrix.m_Data, {})),
                         m_Columns(std::exchange(matrix.m_Columns, {})) {
 
+        }
+
+        constexpr std::size_t getSize() const noexcept {
+            return m_Data.size();
         }
 
         constexpr Type& at(std::size_t rowIndex, std::size_t columnIndex) {
@@ -53,20 +59,36 @@ namespace tspsolver {
             return m_Data[rowIndex][columnIndex];
         }
 
-        RowIterator rowBegin(std::size_t rowIndex) {
+        constexpr RowIterator rowBegin(std::size_t rowIndex) {
             return m_Data[rowIndex].begin();
         }
 
-        RowIterator rowEnd(std::size_t rowIndex) {
+        constexpr RowCIterator rowBegin(std::size_t rowIndex) const {
+            return m_Data[rowIndex].cbegin();
+        }
+
+        constexpr RowIterator rowEnd(std::size_t rowIndex) {
             return m_Data[rowIndex].end();
         }
 
-        ColumnIterator columnBegin(std::size_t columnIndex) {
+        constexpr RowCIterator rowEnd(std::size_t rowIndex) const {
+            return m_Data[rowIndex].cend();
+        }
+
+        constexpr ColumnIterator columnBegin(std::size_t columnIndex) {
             return m_Columns[columnIndex].begin();
         }
 
-        ColumnIterator columnEnd(std::size_t columnIndex) {
+        constexpr ColumnCIterator columnBegin(std::size_t columnIndex) const {
+            return m_Columns[columnIndex].begin();
+        }
+
+        constexpr ColumnIterator columnEnd(std::size_t columnIndex) {
             return m_Columns[columnIndex].end();
+        }
+
+        constexpr ColumnCIterator columnEnd(std::size_t columnIndex) const {
+            return m_Columns.at(columnIndex).cend();
         }
 
     private:
