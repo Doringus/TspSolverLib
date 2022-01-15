@@ -19,6 +19,10 @@ namespace tspsolver {
         using RowCIterator = typename std::vector<Type>::const_iterator;
         using ColumnIterator = typename std::vector<std::reference_wrapper<Type>>::iterator;
         using ColumnCIterator = typename std::vector<std::reference_wrapper<Type>>::const_iterator;
+        using RowsIterator = typename  std::vector<std::vector<Type>>::iterator;
+        using RowsCIterator = typename  std::vector<std::vector<Type>>::const_iterator;
+        using ColumnsIterator = typename std::vector<std::vector<std::reference_wrapper<Type>>>::iterator;
+        using ColumnsCIterator = typename std::vector<std::vector<std::reference_wrapper<Type>>>::const_iterator;
 
         explicit SquareMatrix(std::size_t size) {
             m_Data.resize(size);
@@ -89,6 +93,38 @@ namespace tspsolver {
 
         constexpr ColumnCIterator columnEnd(std::size_t columnIndex) const {
             return m_Columns.at(columnIndex).cend();
+        }
+
+        constexpr RowsIterator rowsBegin(){
+            return m_Data.begin();
+        }
+
+        constexpr RowsCIterator rowsBegin() const {
+            return m_Data.cbegin();
+        }
+
+        constexpr ColumnsIterator columnsBegin() {
+            return m_Columns.begin();
+        }
+
+        constexpr ColumnsCIterator columnsBegin() const {
+            return m_Columns.cbegin();
+        }
+
+        std::vector<std::vector<Type>>& rows() {
+            return m_Data;
+        }
+
+        std::vector<std::vector<Type>> const& rows() const {
+            return m_Data;
+        }
+
+        std::vector<std::vector<std::reference_wrapper<Type>>>& columns() {
+            return m_Columns;
+        }
+
+        std::vector<std::vector<std::reference_wrapper<Type>>> const& columns() const {
+            return m_Columns;
         }
 
     private:
