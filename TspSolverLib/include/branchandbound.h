@@ -91,5 +91,30 @@ namespace tspsolver { namespace  bb {
         return result;
     }
 
+    template <typename Type>
+    constexpr SquareMatrix<Type> excludeEdge(const SquareMatrix<Type>& matrix, const std::pair<std::size_t, std::size_t>& edge) {
+        SquareMatrix<Type> result(matrix);
+        result.at(edge.first, edge.second) = infinity<Type>;
+        return result;
+    }
+
+    template <typename Type>
+    constexpr SquareMatrix<Type> includeEdge(SquareMatrix<Type>& matrix, const std::pair<std::size_t, std::size_t>& edge) {
+        matrix.at(edge.second, edge.first) = infinity<Type>;
+        SquareMatrix<Type> result(matrix.size() - 1);
+        for(std::size_t i = 0, resultMatrixRow = 0; i < matrix.size(); ++i) {
+            for(std::size_t j = 0, resultMatrixCol = 0; j < matrix.size(); ++j) {
+                if(edge.first != i && edge.second != j) {
+                    result.at(resultMatrixRow, resultMatrixCol) = matrix.at(i, j);
+                    resultMatrixCol++;
+                }
+            }
+            if(edge.first != i) {
+                resultMatrixRow++;
+            }
+        }
+        return result;
+    }
+
 }
 }
