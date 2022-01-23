@@ -335,7 +335,7 @@ namespace tspsolver {
 
         SquareMatrix(const SquareMatrix& other) : m_Data(other.m_Data), m_Size(other.m_Size) { }
 
-        SquareMatrix(SquareMatrix&& other) : m_Data(std::move(other.m_Data)), m_Size(std::exchange(other.size(), 0)) { }
+        SquareMatrix(SquareMatrix&& other) : m_Data(std::move(other.m_Data)), m_Size(std::exchange(other.m_Size, 0)) { }
 
         virtual constexpr Type& at(std::size_t rowIndex, std::size_t columnIndex) {
             return m_Data[rowIndex * m_Size + columnIndex];
