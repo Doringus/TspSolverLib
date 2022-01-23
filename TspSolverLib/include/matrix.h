@@ -7,10 +7,12 @@
 #include <vector>
 #include <functional>
 #include <type_traits>
+#include <ostream>
 
 namespace tspsolver {
 
-    template <typename Type, std::enable_if_t<std::is_arithmetic_v<Type>, bool> = true>
+    template <typename Type, typename Allocator = std::allocator<Type>,
+              std::enable_if_t<std::is_arithmetic_v<Type>, bool> = true>
     class SquareMatrix {
     public:
 
@@ -53,6 +55,28 @@ namespace tspsolver {
             constexpr RowConstIterator operator--(int) {
                 RowConstIterator tmp = *this;
                 --m_Ptr;
+                return tmp;
+            }
+
+            constexpr RowConstIterator operator+=(difference_type offset) noexcept {
+                m_Ptr += offset;
+                return *this;
+            }
+
+            constexpr RowConstIterator operator+(difference_type offset) const noexcept {
+                RowConstIterator tmp = *this;
+                tmp += offset;
+                return tmp;
+            }
+
+            constexpr RowConstIterator operator-=(difference_type offset) noexcept {
+                m_Ptr -= offset;
+                return *this;
+            }
+
+            constexpr RowConstIterator operator-(difference_type offset) const noexcept {
+                RowConstIterator tmp = *this;
+                tmp -= offset;
                 return tmp;
             }
 
@@ -111,6 +135,28 @@ namespace tspsolver {
                 return tmp;
             }
 
+            constexpr RowIterator operator+=(difference_type offset) noexcept {
+                RowConstIterator::operator+=(offset);
+                return *this;
+            }
+
+            constexpr RowIterator operator+(difference_type offset) const noexcept {
+                RowIterator tmp = *this;
+                tmp += offset;
+                return tmp;
+            }
+
+            constexpr RowIterator operator-=(difference_type offset) noexcept {
+                RowConstIterator::operator-=(offset);
+                return *this;
+            }
+
+            constexpr RowIterator operator-(difference_type offset) const noexcept {
+                RowIterator tmp = *this;
+                tmp -= offset;
+                return tmp;
+            }
+
             friend constexpr bool operator==(const RowIterator& lhs, const RowIterator& rhs) {
                 return lhs.m_Ptr == rhs.m_Ptr;
             }
@@ -163,6 +209,28 @@ namespace tspsolver {
             constexpr ColumnConstIterator operator--(int) {
                 ColumnConstIterator tmp = *this;
                 m_Ptr -= m_Step;
+                return tmp;
+            }
+
+            constexpr ColumnConstIterator operator+=(difference_type offset) noexcept {
+                m_Ptr += offset * m_Step;
+                return *this;
+            }
+
+            constexpr ColumnConstIterator operator+(difference_type offset) const noexcept {
+                ColumnConstIterator tmp = *this;
+                tmp += offset;
+                return tmp;
+            }
+
+            constexpr ColumnConstIterator operator-=(difference_type offset) noexcept {
+                m_Ptr -= offset * m_Step;
+                return *this;
+            }
+
+            constexpr ColumnConstIterator operator-(difference_type offset) const noexcept {
+                ColumnConstIterator tmp = *this;
+                tmp -= offset;
                 return tmp;
             }
 
@@ -222,6 +290,28 @@ namespace tspsolver {
                 return tmp;
             }
 
+            constexpr ColumnIterator operator+=(difference_type offset) noexcept {
+                ColumnConstIterator::operator+=(offset);
+                return *this;
+            }
+
+            constexpr ColumnIterator operator+(difference_type offset) const noexcept {
+                ColumnIterator tmp = *this;
+                tmp += offset;
+                return tmp;
+            }
+
+            constexpr ColumnIterator operator-=(difference_type offset) noexcept {
+                ColumnConstIterator::operator-=(offset);
+                return *this;
+            }
+
+            constexpr ColumnIterator operator-(difference_type offset) const noexcept {
+                ColumnIterator tmp = *this;
+                tmp -= offset;
+                return tmp;
+            }
+
             friend constexpr bool operator==(const ColumnIterator& lhs, const ColumnIterator& rhs) {
                 return lhs.m_Ptr == rhs.m_Ptr;
             }
@@ -273,11 +363,11 @@ namespace tspsolver {
         }
 
         constexpr RowConstIterator rowBegin(std::size_t rowIndex) const noexcept {
-            return RowConstIterator(m_Data.data() + rowIndex * m_Size);
+            return RowConstIterator(const_cast<Type*>(m_Data.data()) + rowIndex * m_Size);
         }
 
         constexpr RowConstIterator rowEnd(std::size_t rowIndex) const noexcept {
-            return RowConstIterator(m_Data.data() + rowIndex * m_Size + m_Size);
+            return RowConstIterator(const_cast<Type*>(m_Data.data()) + rowIndex * m_Size + m_Size);
         }
 
         constexpr RowIterator rowBegin(std::size_t rowIndex) noexcept {
@@ -289,11 +379,11 @@ namespace tspsolver {
         }
 
         constexpr ColumnConstIterator columnBegin(std::size_t columnIndex) const noexcept {
-            return ColumnConstIterator(m_Data.data() + columnIndex, m_Size);
+            return ColumnConstIterator(const_cast<Type*>(m_Data.data()) + columnIndex, m_Size);
         }
 
         constexpr ColumnConstIterator columnEnd(std::size_t columnIndex) const noexcept {
-            return ColumnConstIterator(m_Data.data() + columnIndex + m_Size * m_Size, m_Size);
+            return ColumnConstIterator(const_cast<Type*>(m_Data.data()) + columnIndex + m_Size * m_Size, m_Size);
         }
 
         constexpr ColumnIterator columnBegin(std::size_t columnIndex) noexcept {
@@ -306,7 +396,7 @@ namespace tspsolver {
 
 
     protected:
-        std::vector<Type> m_Data;
+        std::vector<Type, Allocator> m_Data;
         std::size_t m_Size;
     };
 }
