@@ -13,6 +13,15 @@ namespace tspsolver { namespace  bb {
     template <typename T>
     constexpr T infinity = std::numeric_limits<T>::max();
 
+    using Edge = std::pair<size_t, size_t>;
+
+    template<typename T>
+    struct node_t {
+        SquareMatrix<T> matrix;
+        T weight;
+    };
+
+
     template <typename Type, typename InputIt>
     constexpr Type getMinExcept(InputIt begin, InputIt end, InputIt except) {
         Type lhs = infinity<Type>;
@@ -43,10 +52,10 @@ namespace tspsolver { namespace  bb {
     template <typename Type>
     constexpr Type reduceMatrix(SquareMatrix<Type>& matrix) {
         Type reduceFactor = 0;
-        for(std::size_t i = 0; i < matrix.size(); ++i) {
+        for(size_t i = 0; i < matrix.size(); ++i) {
             reduceFactor += reducePlainArray<Type>(matrix.rowBegin(i), matrix.rowEnd(i));
         }
-        for(std::size_t i = 0; i < matrix.size(); ++i) {
+        for(size_t i = 0; i < matrix.size(); ++i) {
             reduceFactor += reducePlainArray<Type>(matrix.columnBegin(i), matrix.columnEnd(i));
         }
 
@@ -54,18 +63,18 @@ namespace tspsolver { namespace  bb {
     }
 
     template <typename Type>
-    constexpr std::vector<std::pair<std::size_t, std::size_t>>
+    constexpr std::vector<Edge>
     findMaxNullPenalties(const SquareMatrix<Type>& matrix) {
-        std::vector<std::pair<std::size_t, std::size_t>> result;
+        std::vector<Edge> result;
 
         struct penalty_t {
             Type weight;
-            std::pair<std::size_t, std::size_t> edge;
+            Edge edge;
         };
 
         std::vector<penalty_t> penalties;
-        for(std::size_t i = 0; i < matrix.size(); ++i) {
-            for(std::size_t j = 0; j < matrix.size(); ++j) {
+        for(size_t i = 0; i < matrix.size(); ++i) {
+            for(size_t j = 0; j < matrix.size(); ++j) {
                 if(matrix.at(i, j) == 0) {
                     penalties.push_back({getMinExcept<Type>(matrix.rowBegin(i),
                                                   matrix.rowEnd(i),
@@ -92,18 +101,18 @@ namespace tspsolver { namespace  bb {
     }
 
     template <typename Type>
-    constexpr SquareMatrix<Type> excludeEdge(const SquareMatrix<Type>& matrix, const std::pair<std::size_t, std::size_t>& edge) {
+    constexpr SquareMatrix<Type> excludeEdge(const SquareMatrix<Type>& matrix, const Edge& edge) {
         SquareMatrix<Type> result(matrix);
         result.at(edge.first, edge.second) = infinity<Type>;
         return result;
     }
 
     template <typename Type>
-    constexpr SquareMatrix<Type> includeEdge(SquareMatrix<Type>& matrix, const std::pair<std::size_t, std::size_t>& edge) {
+    constexpr SquareMatrix<Type> includeEdge(SquareMatrix<Type>& matrix, const Edge& edge) {
         matrix.at(edge.second, edge.first) = infinity<Type>;
         SquareMatrix<Type> result(matrix.size() - 1);
-        for(std::size_t i = 0, resultMatrixRow = 0; i < matrix.size(); ++i) {
-            for(std::size_t j = 0, resultMatrixCol = 0; j < matrix.size(); ++j) {
+        for(size_t i = 0, resultMatrixRow = 0; i < matrix.size(); ++i) {
+            for(size_t j = 0, resultMatrixCol = 0; j < matrix.size(); ++j) {
                 if(edge.first != i && edge.second != j) {
                     result.at(resultMatrixRow, resultMatrixCol) = matrix.at(i, j);
                     resultMatrixCol++;
