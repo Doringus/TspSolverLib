@@ -15,13 +15,6 @@ namespace tspsolver { namespace  bb {
 
     using Edge = std::pair<size_t, size_t>;
 
-    template<typename T>
-    struct node_t {
-        SquareMatrix<T> matrix;
-        T weight;
-    };
-
-
     template <typename Type, typename InputIt>
     constexpr Type getMinExcept(InputIt begin, InputIt end, InputIt except) {
         Type lhs = infinity<Type>;
@@ -124,6 +117,22 @@ namespace tspsolver { namespace  bb {
         }
         return result;
     }
+
+    template<typename T>
+    struct node_t {
+        SquareMatrix<T> matrix;
+        std::vector<size_t> rowOriginalIndices;
+        std::vector<size_t> columnOriginalIndices;
+        T weight;
+    };
+
+    template<typename T>
+    struct nodeComparator_t {
+        bool operator()(const node_t<T>& lhs, const node_t<T>& rhs){
+            return lhs.weight < rhs.weight;
+        }
+    };
+
 
 }
 }

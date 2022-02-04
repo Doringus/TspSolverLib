@@ -15,7 +15,10 @@ SOURCES += \
     tspsolverlib.cpp
 
 HEADERS += \
+    include/blockingqueue.h \
+    include/branchandbound.h \
     include/matrix.h \
+    include/staticthreadpool.h \
     include/tspsolverlib.h \
 
 # Default rules for deployment.
