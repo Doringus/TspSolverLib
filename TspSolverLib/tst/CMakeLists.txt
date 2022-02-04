@@ -19,6 +19,6 @@ add_executable(${BINARY} ${SOURCES})
 
 add_test(NAME ${BINARY} COMMAND ${BINARY})
 
-include_directories(${PROJECT_SOURCE_DIR}/src)
+#include_directories(${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(${BINARY} PUBLIC gtest gmock)
-#target_link_libraries(${BINARY} PUBLIC ${CMAKE_PROJECT_NAME}_lib gtest gmock)
+target_link_libraries(${BINARY} PUBLIC ${CMAKE_PROJECT_NAME}_lib)
