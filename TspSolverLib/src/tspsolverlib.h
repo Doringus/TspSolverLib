@@ -37,37 +37,52 @@ namespace tspsolver {
     class BBSolver : public TspSolver {
     public:
 
-        BBSolver(SquareMatrix<T> matrix, size_t threadCount = 1) : m_Matrix(std::move(matrix)) {
+        BBSolver(SquareMatrix<T> matrix, size_t threadCount = 1) {
             m_ThreadPool.start(threadCount);
+            m_RootNode.matrixWrapper.matrix = std::move(matrix);
+            m_RootNode.weight = bb::reduceMatrix(m_RootNode.matrixWrapper.matrix);
+            m_NodesStorage.push(m_RootNode);
         }
 
         optimalTour_t solve() override {
-            auto reduceTask = [](SquareMatrix<T>& matrix) -> T {
-                return bb::reduceMatrix(matrix);
-            };
+            while(m_NodesStorage.top().matrixWrapper.matrix.size()  > 2) {
+                T currentMinWeight = m_NodesStorage.top().weight;
+                std::vector<bb::node_t<T>> nodesToSplit;
+                while (!m_NodesStorage.empty() && m_NodesStorage.top().weight == currentMinWeight) {
+                    nodesToSplit.push_back(m_NodesStorage.top());
+                    m_NodesStorage.pop();
+                }
 
-            auto branchTask =[]() {
+                std::vector<std::future<std::vector<bb::Edge>>> possibleEdges;
+                possibleEdges.reserve(nodesToSplit.size());
+                for(auto& node : nodesToSplit) {
+                    possibleEdges.push_back(m_ThreadPool.submit([&node = node]() {
+                        bb::findNullsTask<T> task;
+                        return task(node);
+                    }));
+                }
 
-            };
+                std::vector<std::future<bb::node_t<T>>> children;
 
-            m_ThreadPool.submit(reduceTask(m_Matrix));
+                for(size_t i = 0; i < possibleEdges.size(); ++i) {
+                    for(auto& edge : possibleEdges[i].get()) {
+                        children.push_back(m_ThreadPool.submit([&node = nodesToSplit[i], &edge = edge](){
+                            bb::createLeftBranch<T> task;
+                            return task(node, edge);
+                        }));
+                    }
+                }
+            }
 
+            return optimalTour_t {};
         }
 
     private:
 
-        void handleReduceTask(bb::node_t<T> result) {
-
-        }
-
-        void handleBranchTask() {
-
-        }
-
     private:
-        SquareMatrix<T> m_Matrix;
+        bb::node_t<T> m_RootNode;
         StaticThreadPool m_ThreadPool;
-        std::priority_queue<bb::node_t<T>, bb::nodeComparator_t<T>> m_NodesStorage;
+        std::priority_queue<bb::node_t<T>, std::vector<bb::node_t<T>>, bb::nodeComparator_t<T>> m_NodesStorage;
     };
 
 }

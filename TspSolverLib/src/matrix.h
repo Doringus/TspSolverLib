@@ -11,7 +11,7 @@
 
 namespace tspsolver {
 
-    template <typename Type, typename Allocator = std::allocator<Type>,
+    template <typename Type,
               std::enable_if_t<std::is_arithmetic_v<Type>, bool> = true>
     class SquareMatrix {
     public:
@@ -333,15 +333,33 @@ namespace tspsolver {
             m_Data.resize(size * size);
         }
 
+        SquareMatrix() {}
+
         SquareMatrix(const SquareMatrix& other) : m_Data(other.m_Data), m_Size(other.m_Size) { }
 
         SquareMatrix(SquareMatrix&& other) noexcept: m_Data(std::move(other.m_Data)), m_Size(std::exchange(other.m_Size, 0)) { }
 
-        virtual constexpr Type& at(std::size_t rowIndex, std::size_t columnIndex) {
+        SquareMatrix& operator=(const SquareMatrix& other) {
+            if(this != &other) {
+                std::copy(other.m_Data.begin(), other.m_Data.end(), std::back_inserter(m_Data));
+                m_Size = other.m_Size;
+            }
+            return *this;
+        }
+
+        SquareMatrix& operator=(SquareMatrix&& other) {
+            if(this != &other) {
+                m_Data = std::move(other.m_Data);
+                m_Size = std::exchange(other.m_Size, 0);
+            }
+            return *this;
+        }
+
+        constexpr Type& at(std::size_t rowIndex, std::size_t columnIndex) {
             return m_Data[rowIndex * m_Size + columnIndex];
         }
 
-        virtual constexpr Type const& at(std::size_t rowIndex, std::size_t columnIndex) const {
+        constexpr Type const& at(std::size_t rowIndex, std::size_t columnIndex) const {
             return m_Data.at(rowIndex * m_Size + columnIndex);
         }
 
@@ -397,10 +415,14 @@ namespace tspsolver {
             return ColumnIterator(m_Data.data() + columnIndex + m_Size * m_Size, m_Size);
         }
 
-
     protected:
-        std::vector<Type, Allocator> m_Data;
+        std::vector<Type> m_Data;
         std::size_t m_Size;
     };
+
+    template <typename T>
+    constexpr bool operator==(const SquareMatrix<T>& lhs, const SquareMatrix<T>& rhs) {
+        return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+    }
 }
 
