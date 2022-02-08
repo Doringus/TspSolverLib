@@ -23,19 +23,21 @@ public:
     }
 
     template <typename Func, typename... Args, typename Return = std::invoke_result_t<std::decay_t<Func>, std::decay_t<Args>...>>
-    std::future<Return> submit(const Func& task, const Args&... args) {
+    std::future<Return> submit(const Func& task, Args&&... args) {
         auto promise = std::make_shared<std::promise<Return>>();
         auto future = promise->get_future();
+        std::function<void()> function;
         if constexpr (std::is_void_v<Return>) {
-            pushTask([task, args..., promise]() {
-                task(args...);
+            function = [fargs = std::make_tuple(std::forward<Args>(args)...), callable = task, promise]() {
+                std::apply(callable, fargs);
                 promise->set_value();
-            });
+            };
         } else {
-            pushTask([task, args..., promise]() {
-                promise->set_value(task(args...));
-            });
+            function = [fargs = std::make_tuple(std::forward<Args>(args)...), callable = task, promise]() {
+                promise->set_value(std::apply(callable, fargs));
+            };
         }
+        m_Tasks.put(std::move(function));
         return future;
     }
 
@@ -47,18 +49,6 @@ public:
     }
 
 private:
-
-    template <typename  Func>
-    void pushTask(const Func& task) {
-        m_Tasks.put(task);
-    }
-
-    template <typename Func, typename... Args>
-    void pushTask(const Func& task, Args... args) {
-        pushTask([task, args...](){
-            task(args...);
-        });
-    }
 
     void workerRoutine() {
         while(true) {
