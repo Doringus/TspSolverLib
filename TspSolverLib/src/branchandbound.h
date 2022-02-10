@@ -5,15 +5,14 @@
 #include <algorithm>
 #include <numeric>
 #include <limits>
+#include <optional>
 
-#include "matrix.h"
+#include "node.h"
 
 namespace tspsolver { namespace  bb {
 
     template <typename T>
     constexpr T infinity = std::numeric_limits<T>::max();
-
-    using Edge = std::pair<size_t, size_t>;
 
     template <typename Type, typename InputIt>
     constexpr Type getMinExcept(InputIt begin, InputIt end, InputIt except) {
@@ -104,7 +103,7 @@ namespace tspsolver { namespace  bb {
     }
 
     template <typename Type>
-    constexpr SquareMatrix<Type> includeEdge(SquareMatrix<Type>& matrix, const Edge& edge) {
+    constexpr SquareMatrix<Type> includeEdge(const SquareMatrix<Type>& matrix, const Edge& edge) {
         SquareMatrix<Type> result(matrix.size() - 1);
         for(size_t i = 0, resultMatrixRow = 0; i < matrix.size(); ++i) {
             for(size_t j = 0, resultMatrixCol = 0; j < matrix.size(); ++j) {
@@ -120,89 +119,56 @@ namespace tspsolver { namespace  bb {
         return result;
     }
 
-
-
     template <typename T>
-    struct matrixWrapper_t {
-        SquareMatrix<T> matrix;
-        std::vector<std::size_t> rowLogicalIndices; // original row header
-        std::vector<std::size_t> columnLogicalIndices; // original column header
-    };
-
-
-    template<typename T>
-    struct node_t {
-        matrixWrapper_t<T> matrixWrapper;
-        T weight;
-    };
-
-    template<typename T>
-    struct nodeComparator_t {
-        bool operator()(const node_t<T>& lhs, const node_t<T>& rhs){
-            return lhs.weight < rhs.weight;
-        }
-    };
-
-
-    template <typename T>
-    struct findNullsTask {
-        std::vector<Edge> operator() (node_t<T>& node) {
-            return findMaxNullPenalties(node.matrixWrapper.matrix);
-        }
+    std::vector<Edge> findNullsTask(const Node<T>& node) {
+        return findMaxNullPenalties(node.getMatrix());
     };
 
     template <typename T>
-    struct createLeftBranch {
+    Node<T> createLeftBranch(const Node<T>& node, const Edge& edge) {
+        MatrixIndicesWrapper<T> wrapper(node.getMatrixWrapper().getRowIndices(),
+                                        node.getMatrixWrapper().getColumnIndices());
 
-        node_t<T> operator() (node_t<T>& node, const Edge& edge) {
-            node_t<T> result;
-            result.matrixWrapper = node.matrixWrapper;
-            result.matrixWrapper.matrix = bb::excludeEdge(result.matrixWrapper.matrix, edge);
-            result.weight = reduceMatrix(result.matrixWrapper.matrix);
-            return result;
-        }
+        auto matrix = excludeEdge(node.getMatrix(), edge);
+        auto weight = reduceMatrix(matrix) + node.getWeight();
+        wrapper.setMatrix(std::move(matrix));
+
+        return Node<T>(node.getIncludedEdges(), std::move(wrapper), weight);
     };
 
+    /// Edge - physical coords in matrix
     template <typename T>
-    struct createRightBranch {
+    Node<T> createRightBranch(Node<T>& node, const Edge& edge) {
+        MatrixIndicesWrapper<T> wrapper(node.getMatrixWrapper().getRowIndices(),
+                                        node.getMatrixWrapper().getColumnIndices());
 
-        /// Edge - physical coords in matrix
-        node_t<T> operator() (node_t<T>& node, const Edge& edge) {
-            node_t<T> result;
-            result.matrixWrapper.columnLogicalIndices = node.matrixWrapper.columnLogicalIndices;
-            result.matrixWrapper.rowLogicalIndices = node.matrixWrapper.rowLogicalIndices;
-
-            /// Place in path edge [rowLogicalIndex, columnLogicalIndex]
-            size_t rowLogicalIndex = result.matrixWrapper.rowLogicalIndices[edge.first];
-            size_t columnLogicalIndex = result.matrixWrapper.columnLogicalIndices[edge.second];
-
-            /// Remove edge
-            auto matrix = includeEdge(node.matrixWrapper.matrix, edge);
-
-            result.matrixWrapper.columnLogicalIndices.erase(result.matrixWrapper.columnLogicalIndices.begin() + edge.first);
-            result.matrixWrapper.rowLogicalIndices.erase(result.matrixWrapper.rowLogicalIndices.begin() + edge.second);
-
-            /// We need to replace element [columnLogicalIndex, rowLogicalIndex] with infinity
-            /// so we need to find their physical indices
-
-            auto rowIt = std::find(result.matrixWrapper.rowLogicalIndices.begin(),
-                                   result.matrixWrapper.rowLogicalIndices.end(), columnLogicalIndex);
-            auto columnIt = std::find(result.matrixWrapper.columnLogicalIndices.begin(),
-                                      result.matrixWrapper.columnLogicalIndices.end(), rowLogicalIndex);
-            if(rowIt != result.matrixWrapper.rowLogicalIndices.end() &&
-               columnIt != result.matrixWrapper.columnLogicalIndices.end()) {
-                matrix.at(std::distance(result.matrixWrapper.rowLogicalIndices.begin(), rowIt),
-                          std::distance(result.matrixWrapper.columnLogicalIndices.begin(), columnIt)) = infinity<T>;
-            }
+        /// Place in path edge [rowLogicalIndex, columnLogicalIndex]
+        size_t rowLogicalIndex = wrapper.getRowLogicalIndex(edge.first);
+        size_t columnLogicalIndex = wrapper.getColumnLogicalIndex(edge.second);
 
 
-            /// Place all data in node
-            result.weight = reduceMatrix(matrix);
-            result.matrixWrapper.matrix = matrix;
+        /// Remove edge
+        auto matrix = includeEdge(node.getMatrix(), edge);
 
-            return result;
+        wrapper.eraseRowIndex(edge.first);
+        wrapper.eraseColumnIndex(edge.second);
+        wrapper.setMatrix(matrix);
+
+        /// We need to replace element [columnLogicalIndex, rowLogicalIndex] with infinity
+        /// so we need to find their physical indices
+
+        auto rowIndex = wrapper.getPhysicalRowIndex(columnLogicalIndex);
+        auto colIndex = wrapper.getPhysicalColumnIndex(rowLogicalIndex);
+
+        if(rowIndex && colIndex) {
+            wrapper.getMatrix().at(*rowIndex, *colIndex) = infinity<T>;
         }
 
+        auto weight = reduceMatrix(matrix) + node.getWeight();
+        Node<T> result(node.getIncludedEdges(), std::move(wrapper), weight);
+        result.getIncludedEdges().push_back({rowLogicalIndex, columnLogicalIndex});
+
+        return result;
     };
 }
 }

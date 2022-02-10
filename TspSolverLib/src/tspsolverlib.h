@@ -39,16 +39,17 @@ namespace tspsolver {
 
         BBSolver(SquareMatrix<T> matrix, size_t threadCount = 1) {
             m_ThreadPool.start(threadCount);
-            m_RootNode.matrixWrapper.matrix = std::move(matrix);
-            m_RootNode.weight = bb::reduceMatrix(m_RootNode.matrixWrapper.matrix);
-            m_NodesStorage.push(m_RootNode);
+            bb::MatrixIndicesWrapper<T> wrapper(matrix);
+            T weight = bb::reduceMatrix(wrapper.getMatrix());
+            bb::Node<T> rootNode({}, std::move(wrapper), weight);
+            m_NodesStorage.push(std::move(rootNode));
         }
 
         optimalTour_t solve() override {
-            while(m_NodesStorage.top().matrixWrapper.matrix.size()  > 2) {
-                T currentMinWeight = m_NodesStorage.top().weight;
-                std::vector<bb::node_t<T>> nodesToSplit;
-                while (!m_NodesStorage.empty() && m_NodesStorage.top().weight == currentMinWeight) {
+            while(m_NodesStorage.top().getMatrix().size()  > 2) {
+                T currentMinWeight = m_NodesStorage.top().getWeight();
+                std::vector<bb::Node<T>> nodesToSplit;
+                while (!m_NodesStorage.empty() && m_NodesStorage.top().getWeight() == currentMinWeight) {
                     nodesToSplit.push_back(m_NodesStorage.top());
                     m_NodesStorage.pop();
                 }
@@ -57,21 +58,29 @@ namespace tspsolver {
                 possibleEdges.reserve(nodesToSplit.size());
                 for(auto& node : nodesToSplit) {
                     possibleEdges.push_back(m_ThreadPool.submit([&node = node]() {
-                        bb::findNullsTask<T> task;
-                        return task(node);
+                        return bb::findNullsTask(node);
                     }));
                 }
 
-                std::vector<std::future<bb::node_t<T>>> children;
+                std::vector<std::future<bb::Node<T>>> children;
 
                 for(size_t i = 0; i < possibleEdges.size(); ++i) {
-                    for(auto& edge : possibleEdges[i].get()) {
-                        children.push_back(m_ThreadPool.submit([&node = nodesToSplit[i], &edge = edge](){
-                            bb::createLeftBranch<T> task;
-                            return task(node, edge);
-                        }));
+                    for(auto edge : possibleEdges[i].get()) {
+                        bb::Node<T>& node = nodesToSplit.at(i);
+                        children.push_back(m_ThreadPool.submit([](bb::Node<T>& node, const bb::Edge& edge){
+                            return bb::createLeftBranch(node, edge);
+                        }, std::ref(node), edge));
+
+                        children.push_back(m_ThreadPool.submit([](bb::Node<T>& node, const bb::Edge& edge){
+                            return bb::createRightBranch(node, edge);
+                        }, std::ref(node), edge));
                     }
                 }
+
+                for(auto& child : children) {
+                    m_NodesStorage.push(child.get());
+                }
+
             }
 
             return optimalTour_t {};
@@ -80,9 +89,8 @@ namespace tspsolver {
     private:
 
     private:
-        bb::node_t<T> m_RootNode;
         StaticThreadPool m_ThreadPool;
-        std::priority_queue<bb::node_t<T>, std::vector<bb::node_t<T>>, bb::nodeComparator_t<T>> m_NodesStorage;
+        std::priority_queue<bb::Node<T>, std::vector<bb::Node<T>>, bb::nodeComparator_t<T>> m_NodesStorage;
     };
 
 }
