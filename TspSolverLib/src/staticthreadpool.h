@@ -12,7 +12,7 @@ using Task = std::function<void()>;
 
 class StaticThreadPool {
 public:
-    StaticThreadPool() = default;
+    StaticThreadPool() : m_ShouldWork(true) { }
 
     constexpr void start(size_t threadsCount) {
         for(size_t i = 0; i < threadsCount; ++i) {
@@ -42,7 +42,9 @@ public:
     }
 
     void shutdown() {
+        m_ShouldWork = false;
         for(auto& thread : m_Threads) {
+            m_Tasks.put([](){});
             thread.join();
         }
         m_Threads.clear();
@@ -51,7 +53,7 @@ public:
 private:
 
     void workerRoutine() {
-        while(true) {
+        while(m_ShouldWork) {
             auto task = m_Tasks.take();
             task();
         }
@@ -60,4 +62,5 @@ private:
 private:
     std::vector<std::thread> m_Threads;
     BlockingQueue<Task> m_Tasks;
+    bool m_ShouldWork;
 };

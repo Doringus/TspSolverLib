@@ -82,7 +82,7 @@ namespace tspsolver {
                 }
 
             }
-
+            m_ThreadPool.shutdown();
             return optimalTour_t {};
         }
 

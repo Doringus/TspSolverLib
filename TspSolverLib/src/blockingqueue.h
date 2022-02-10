@@ -3,6 +3,7 @@
 #include <queue>
 #include <mutex>
 #include <condition_variable>
+#include <iostream>
 
 template <typename T>
 class BlockingQueue {
@@ -25,6 +26,7 @@ public:
 private:
 
     T takeLocked() {
+        std::cout << "[THREAD]: "<<std::this_thread::get_id() << " took task;\n";
         T front = m_Tasks.front();
         m_Tasks.pop();
         return front;
