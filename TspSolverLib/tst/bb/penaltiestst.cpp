@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <branchandbound.h>
+#include <bb/branchandbound.h>
 
 TEST(BBTest, penaltiesTest) {
     tspsolver::SquareMatrix<int> matrix(3);

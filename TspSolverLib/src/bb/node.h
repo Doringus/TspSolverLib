@@ -31,7 +31,7 @@ namespace tspsolver { namespace bb {
             m_Weight = weight;
         }
 
-        T getWeight() const noexcept {
+        double getWeight() const noexcept {
             return m_Weight;
         }
 
@@ -62,7 +62,7 @@ namespace tspsolver { namespace bb {
     private:
         MatrixIndicesWrapper<T> m_MatrixWrapper;
         std::vector<Edge> m_IncludedEdges;
-        T m_Weight;
+        double m_Weight;
     };
 
     template <typename T>

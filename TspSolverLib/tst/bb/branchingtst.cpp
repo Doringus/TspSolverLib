@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <branchandbound.h>
+#include <bb/branchandbound.h>
 
 TEST(BBTest, leftBranchTest) {
     tspsolver::SquareMatrix<int> matrix(3);
@@ -16,18 +16,14 @@ TEST(BBTest, leftBranchTest) {
     matrix.at(2, 1) = 12;
     matrix.at(2, 2) = 3;
 
-    tspsolver::bb::node_t<int> node;
-    node.matrixWrapper.matrix = matrix;
-    node.matrixWrapper.rowLogicalIndices = {0, 1, 2};
-    node.matrixWrapper.columnLogicalIndices = {0, 1, 2};
-    node.weight = tspsolver::bb::reduceMatrix(matrix);
+    tspsolver::bb::Node<int> node;
+    tspsolver::bb::MatrixIndicesWrapper<int> wrapper(matrix);
+    node.setMatrixWrapper(wrapper);
+    node.setWeight(tspsolver::bb::reduceMatrix(wrapper.getMatrix()));
 
-    tspsolver::bb::createLeftBranch<int> task;
-    auto result = task(node, {0, 1});
+    auto result = tspsolver::bb::createLeftBranch(node, {0, 1});
 
-    EXPECT_EQ(result.matrixWrapper.matrix.at(0, 1), std::numeric_limits<int>::max());
-    EXPECT_EQ(result.matrixWrapper.columnLogicalIndices, node.matrixWrapper.columnLogicalIndices);
-    EXPECT_EQ(result.matrixWrapper.rowLogicalIndices, node.matrixWrapper.rowLogicalIndices);
+    EXPECT_EQ(result.getMatrix().at(0, 1), std::numeric_limits<int>::max());
 }
 
 TEST(BBTest, rightBranchTest) {
@@ -44,13 +40,11 @@ TEST(BBTest, rightBranchTest) {
     matrix.at(2, 1) = 11;
     matrix.at(2, 2) = 0;
 
-    tspsolver::bb::node_t<int> node;
-    node.matrixWrapper.matrix = matrix;
-    node.matrixWrapper.rowLogicalIndices = {0, 1, 2};
-    node.matrixWrapper.columnLogicalIndices = {0, 1, 2};
 
-    tspsolver::bb::createRightBranch<int> task;
-    auto result = task(node, {1, 1});
+    tspsolver::bb::MatrixIndicesWrapper<int> wrapper(matrix);
+    tspsolver::bb::Node<int> node({}, wrapper, 0);
+
+    auto result = tspsolver::bb::createRightBranch(node, {1, 1});
 
     tspsolver::SquareMatrix<int> expected(2);
     expected.at(0, 0) = 0;
@@ -60,7 +54,7 @@ TEST(BBTest, rightBranchTest) {
     expected.at(1, 1) = 0;
 
 
-    EXPECT_EQ(result.matrixWrapper.matrix.size(), 2);
-    EXPECT_EQ(result.weight, 1);
-    EXPECT_EQ(expected, result.matrixWrapper.matrix);
+    EXPECT_EQ(result.getMatrix().size(), 2);
+    EXPECT_EQ(result.getWeight(), 1);
+    EXPECT_EQ(expected, result.getMatrix());
 }

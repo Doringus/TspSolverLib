@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <branchandbound.h>
+#include <bb/branchandbound.h>
 
 TEST(BBTest, reducePlainArrayTest) {
     std::vector<int> v = {4, 2, 5, 8};

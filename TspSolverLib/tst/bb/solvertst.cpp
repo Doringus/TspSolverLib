@@ -1,12 +1,8 @@
-#include <iostream>
-
 #include <gtest/gtest.h>
 
 #include <tspsolverlib.h>
 
-int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    /*
+TEST(BBTest, solverTest) {
     tspsolver::SquareMatrix<int> matrix(5);
     matrix.at(0, 0) = tspsolver::bb::infinity<int>;
     matrix.at(0, 1) = 20;
@@ -40,8 +36,8 @@ int main(int argc, char **argv) {
     matrix.at(4, 4) = tspsolver::bb::infinity<int>;;
 
     tspsolver::BBSolver solver(matrix, 3);
-    solver.solve();
-    */
 
-    return RUN_ALL_TESTS();
+    auto result = solver.solve();
+
+    EXPECT_DOUBLE_EQ(result.weight, 41);
 }

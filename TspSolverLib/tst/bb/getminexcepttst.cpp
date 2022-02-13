@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <branchandbound.h>
+#include <bb/branchandbound.h>
 
 TEST(BBTest, getMinExceptTest) {
     std::vector<int> v = {6, 3, 0, 5, 4, 2};

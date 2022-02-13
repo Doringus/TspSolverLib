@@ -30,8 +30,8 @@ namespace tspsolver { namespace  bb {
     }
 
     template <typename Type, typename InputIt>
-    constexpr Type reducePlainArray(InputIt begin, InputIt end) {
-        Type min = *std::min_element(begin, end);
+    constexpr double reducePlainArray(InputIt begin, InputIt end) {
+        double min = *std::min_element(begin, end);
         std::for_each(begin, end, [min](auto& e) {
             if(e != infinity<Type>) {
                 e -= min;
@@ -42,8 +42,8 @@ namespace tspsolver { namespace  bb {
     }
 
     template <typename Type>
-    constexpr Type reduceMatrix(SquareMatrix<Type>& matrix) {
-        Type reduceFactor = 0;
+    constexpr double reduceMatrix(SquareMatrix<Type>& matrix) {
+        double reduceFactor = 0;
         for(size_t i = 0; i < matrix.size(); ++i) {
             reduceFactor += reducePlainArray<Type>(matrix.rowBegin(i), matrix.rowEnd(i));
         }
@@ -130,7 +130,10 @@ namespace tspsolver { namespace  bb {
                                         node.getMatrixWrapper().getColumnIndices());
 
         auto matrix = excludeEdge(node.getMatrix(), edge);
-        auto weight = reduceMatrix(matrix) + node.getWeight();
+        auto weight = reduceMatrix(matrix);
+        if(weight < infinity<double> - 1) {
+            weight += node.getWeight();
+        }
         wrapper.setMatrix(std::move(matrix));
 
         return Node<T>(node.getIncludedEdges(), std::move(wrapper), weight);
@@ -152,7 +155,7 @@ namespace tspsolver { namespace  bb {
 
         wrapper.eraseRowIndex(edge.first);
         wrapper.eraseColumnIndex(edge.second);
-        wrapper.setMatrix(matrix);
+        wrapper.setMatrix(std::move(matrix));
 
         /// We need to replace element [columnLogicalIndex, rowLogicalIndex] with infinity
         /// so we need to find their physical indices
@@ -164,7 +167,10 @@ namespace tspsolver { namespace  bb {
             wrapper.getMatrix().at(*rowIndex, *colIndex) = infinity<T>;
         }
 
-        auto weight = reduceMatrix(matrix) + node.getWeight();
+        auto weight = reduceMatrix(wrapper.getMatrix());
+        if(weight < infinity<double> - 1) {
+            weight += node.getWeight();
+        }
         Node<T> result(node.getIncludedEdges(), std::move(wrapper), weight);
         result.getIncludedEdges().push_back({rowLogicalIndex, columnLogicalIndex});
 
