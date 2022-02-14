@@ -14,7 +14,7 @@ endif()
 set(BINARY ${CMAKE_PROJECT_NAME}_tst)
 
 set(SOURCES main.cpp matrix/matrixtst.cpp bb/reduceplainarraytst.cpp bb/reducematrixtst.cpp
-        bb/getminexcepttst.cpp bb/penaltiestst.cpp bb/branchingtst.cpp bb/solvertst.cpp)
+        bb/getminexcepttst.cpp bb/penaltiestst.cpp bb/branchingtst.cpp bb/solvertst.cpp ga/crossoverstst.cpp)
 
 add_executable(${BINARY} ${SOURCES})
 

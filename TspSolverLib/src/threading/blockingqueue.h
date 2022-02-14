@@ -26,7 +26,7 @@ public:
 private:
 
     T takeLocked() {
-        std::cout << "[THREAD]: "<<std::this_thread::get_id() << " took task;\n";
+        std::cout << "[THREAD "<<std::this_thread::get_id() <<"]: took task\n";
         T front = m_Tasks.front();
         m_Tasks.pop();
         return front;
