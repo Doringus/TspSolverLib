@@ -3,10 +3,9 @@
 #include <vector>
 #include <algorithm>
 
-namespace tspsolver { namespace ga {
+#include "common.h"
 
-    template <typename T>
-    using Genome = std::vector<T>;
+namespace tspsolver { namespace ga {
 
     template <typename T>
     std::pair<Genome<T>, Genome<T>> posCrossover(const Genome<T>& lhs, const Genome<T>& rhs, const std::vector<size_t>& positions) {
@@ -44,5 +43,72 @@ namespace tspsolver { namespace ga {
         fillChild(rhs, rightChild, positions);
         return {leftChild, rightChild};
     }
+
+    template <typename T>
+    std::pair<Genome<T>, Genome<T>> ox2Crossover(const Genome<T>& lhs, const Genome<T>& rhs, const std::vector<size_t>& positions) {
+        Genome<T> lhsSlice, rhsSlice;
+
+        for(const auto& pos : positions) {
+            lhsSlice.push_back(lhs.at(pos));
+        }
+        for(const auto& pos : positions) {
+            rhsSlice.push_back(rhs.at(pos));
+        }
+
+        auto fillChild = [](const Genome<T>& parent, const Genome<T> slice) -> Genome<T> {
+            size_t sliceIndex = 0;
+            Genome<T> child(parent.size());
+
+            for(size_t i = 0; i < parent.size(); ++i) {
+                if(std::find(slice.begin(), slice.end(), parent.at(i)) != slice.end()) {
+                    child[i] = slice.at(sliceIndex);
+                    sliceIndex++;
+                } else {
+                    child[i] = parent[i];
+                }
+            }
+
+            return child;
+        };
+
+        return {fillChild(lhs, rhsSlice), fillChild(rhs, lhsSlice)};
+}
+
+    template <typename T>
+    std::pair<Genome<T>, Genome<T>> pmxCrossover(const Genome<T>& lhs, const Genome<T>& rhs, size_t begin, size_t end) {
+        if(begin > end) {
+            std::swap(begin, end);
+        }
+
+        Genome<T> leftChild(lhs.begin(), lhs.end()), rightChild(rhs.begin(), rhs.end());
+
+        std::copy(lhs.begin() + begin, lhs.begin() + end + 1, rightChild.begin() + begin);
+        std::copy(rhs.begin() + begin, rhs.begin() + end + 1, leftChild.begin() + begin);
+
+        std::unordered_map<T, T> leftMapping, rightMapping;
+        for(size_t i = begin; i <= end; ++i) {
+            leftMapping[rhs[i]] = lhs[i];
+            rightMapping[lhs[i]] = rhs[i];
+        }
+
+        auto fillChild = [](Genome<T>& child, std::unordered_map<T, T> mapping, size_t begin, size_t end) {
+            for(size_t i = 0; i < begin; ++i) {
+                while(mapping.find(child.at(i)) != mapping.end()) {
+                    child[i] = mapping[child[i]];
+                }
+            }
+            for(size_t i = end + 1; i < child.size(); ++i) {
+                while(mapping.find(child.at(i)) != mapping.end()) {
+                    child[i] = mapping[child[i]];
+                }
+            }
+        };
+
+        fillChild(leftChild, leftMapping, begin, end);
+        fillChild(rightChild, rightMapping, begin, end);
+
+        return {leftChild, rightChild};
+    }
+
 }}
 
