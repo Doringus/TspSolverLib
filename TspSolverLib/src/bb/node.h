@@ -1,10 +1,10 @@
 #pragma once
 
 #include "matrixindiceswrapper.h"
+#include "path.h"
 
 namespace tspsolver { namespace bb {
 
-    using Edge = std::pair<size_t, size_t>;
 
     template <typename T>
     class Node {
@@ -15,8 +15,9 @@ namespace tspsolver { namespace bb {
         Node& operator=(const Node& other) = default;
         Node& operator=(Node&& other) = default;
 
-        Node(std::vector<Edge> includedEdges, MatrixIndicesWrapper<T> wrapper, T weight)
-        : m_IncludedEdges(std::move(includedEdges)), m_MatrixWrapper(std::move(wrapper)), m_Weight(weight) { }
+        Node(std::vector<Edge> includedEdges, MatrixIndicesWrapper<T> wrapper, Path path, T weight)
+        : m_IncludedEdges(std::move(includedEdges)), m_MatrixWrapper(std::move(wrapper)),
+        m_Path(std::move(path)), m_Weight(weight) { }
 
 
         void setMatrixWrapper(const MatrixIndicesWrapper<T>& wrapper) {
@@ -59,15 +60,27 @@ namespace tspsolver { namespace bb {
             return m_MatrixWrapper;
         }
 
+        void addEdge(const Edge& edge) {
+            m_Path.addEdge(edge);
+        }
+
+        Path const& getPath() const {
+            return m_Path;
+        }
+
     private:
+        double m_Weight;
         MatrixIndicesWrapper<T> m_MatrixWrapper;
         std::vector<Edge> m_IncludedEdges;
-        double m_Weight;
+        Path m_Path;
     };
 
     template <typename T>
     struct nodeComparator_t {
         bool operator()(const Node<T>& lhs, const Node<T>& rhs){
+            if(lhs.getWeight() == rhs.getWeight()) {
+                return lhs.getMatrix().size() > rhs.getMatrix().size();
+            }
             return lhs.getWeight() > rhs.getWeight();
         }
     };

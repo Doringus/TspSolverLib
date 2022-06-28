@@ -17,6 +17,7 @@
 
 #include <vector>
 #include <queue>
+#include <chrono>
 
 #include "matrix.h"
 #include "threading/staticthreadpool.h"
@@ -41,7 +42,7 @@ namespace tspsolver {
             m_ThreadPool.start(threadCount);
             bb::MatrixIndicesWrapper<T> wrapper(matrix);
             T weight = bb::reduceMatrix(wrapper.getMatrix());
-            bb::Node<T> rootNode({}, std::move(wrapper), weight);
+            bb::Node<T> rootNode({}, std::move(wrapper), bb::Path(), weight);
             m_NodesStorage.push(std::move(rootNode));
         }
 
@@ -50,13 +51,16 @@ namespace tspsolver {
         }
 
         optimalTour_t solve() override {
-            while(m_NodesStorage.top().getMatrix().size()  > 0) {
+            while(m_NodesStorage.top().getMatrix().size()  > 2) {
                 T currentMinWeight = m_NodesStorage.top().getWeight();
+           //     std::cout << "Current min: " << currentMinWeight << "\n";
                 std::vector<bb::Node<T>> nodesToSplit;
+
                 while (!m_NodesStorage.empty() && m_NodesStorage.top().getWeight() == currentMinWeight) {
                     nodesToSplit.push_back(m_NodesStorage.top());
                     m_NodesStorage.pop();
                 }
+
 
                 std::vector<std::future<std::vector<bb::Edge>>> possibleEdges;
                 possibleEdges.reserve(nodesToSplit.size());
@@ -88,6 +92,17 @@ namespace tspsolver {
             }
 
             auto node = m_NodesStorage.top();
+
+            for(size_t i = 0; i < 2; ++i) {
+                for(size_t j = 0; j < 2; ++j) {
+                    if(node.getMatrix().at(i, j) != infinity<T>) {
+                        node.getIncludedEdges().push_back({node.getMatrixWrapper().getRowLogicalIndex(i),
+                                                          node.getMatrixWrapper().getColumnLogicalIndex(j)});
+                    }
+
+
+                }
+            }
 
 
             auto path = buildPath(node.getIncludedEdges());

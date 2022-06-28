@@ -42,9 +42,11 @@ public:
     }
 
     void shutdown() {
-        m_ShouldWork = false;
+        m_ShouldWork.store(false);
         for(auto& thread : m_Threads) {
-            m_Tasks.put([](){});
+            m_Tasks.put({});
+        }
+        for(auto& thread : m_Threads) {
             thread.join();
         }
         m_Threads.clear();
@@ -53,8 +55,11 @@ public:
 private:
 
     void workerRoutine() {
-        while(m_ShouldWork) {
+        while(true) {
             auto task = m_Tasks.take();
+            if(!task) {
+                break;
+            }
             task();
         }
     }
@@ -62,5 +67,5 @@ private:
 private:
     std::vector<std::thread> m_Threads;
     BlockingQueue<Task> m_Tasks;
-    bool m_ShouldWork;
+    std::atomic<bool> m_ShouldWork;
 };

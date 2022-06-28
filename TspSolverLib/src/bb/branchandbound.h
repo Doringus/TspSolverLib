@@ -8,11 +8,11 @@
 #include <optional>
 
 #include "node.h"
+#include "common.h"
 
 namespace tspsolver { namespace  bb {
 
-    template <typename T>
-    constexpr T infinity = std::numeric_limits<T>::max();
+
 
     template <typename Type, typename InputIt>
     constexpr Type getMinExcept(InputIt begin, InputIt end, InputIt except) {
@@ -45,10 +45,18 @@ namespace tspsolver { namespace  bb {
     constexpr double reduceMatrix(SquareMatrix<Type>& matrix) {
         double reduceFactor = 0;
         for(size_t i = 0; i < matrix.size(); ++i) {
-            reduceFactor += reducePlainArray<Type>(matrix.rowBegin(i), matrix.rowEnd(i));
+            auto r = reducePlainArray<Type>(matrix.rowBegin(i), matrix.rowEnd(i));
+            if(r == infinity<Type>) {
+                r = 0;
+            }
+            reduceFactor += r;
         }
         for(size_t i = 0; i < matrix.size(); ++i) {
-            reduceFactor += reducePlainArray<Type>(matrix.columnBegin(i), matrix.columnEnd(i));
+            auto r = reducePlainArray<Type>(matrix.columnBegin(i), matrix.columnEnd(i));;
+            if(r == infinity<Type>) {
+                r = 0;
+            }
+            reduceFactor += r;
         }
 
         return reduceFactor;
@@ -136,7 +144,7 @@ namespace tspsolver { namespace  bb {
         }
         wrapper.setMatrix(std::move(matrix));
 
-        return Node<T>(node.getIncludedEdges(), std::move(wrapper), weight);
+        return Node<T>(node.getIncludedEdges(), std::move(wrapper), node.getPath(), weight);
     };
 
     /// Edge - physical coords in matrix
@@ -148,7 +156,6 @@ namespace tspsolver { namespace  bb {
         /// Place in path edge [rowLogicalIndex, columnLogicalIndex]
         size_t rowLogicalIndex = wrapper.getRowLogicalIndex(edge.first);
         size_t columnLogicalIndex = wrapper.getColumnLogicalIndex(edge.second);
-
 
         /// Remove edge
         auto matrix = includeEdge(node.getMatrix(), edge);
@@ -171,7 +178,14 @@ namespace tspsolver { namespace  bb {
         if(weight < infinity<double> - 1) {
             weight += node.getWeight();
         }
-        Node<T> result(node.getIncludedEdges(), std::move(wrapper), weight);
+        auto includedEdges = node.getIncludedEdges();
+        Path p = node.getPath();
+        p.addEdge({rowLogicalIndex, columnLogicalIndex});
+        p.removeCycles(wrapper);
+      //  node.addEdge({rowLogicalIndex, columnLogicalIndex});
+      //  node.getPath().removeCycles(wrapper);
+
+        Node<T> result(includedEdges, std::move(wrapper), p, weight);
         result.getIncludedEdges().push_back({rowLogicalIndex, columnLogicalIndex});
 
         return result;
